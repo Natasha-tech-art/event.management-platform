@@ -11,4 +11,5 @@ urlpatterns = [
     path('checkin/', CheckInTicketView.as_view(), name='checkin-ticket'),
     path('attendance/<int:event_id>/', EventAttendanceView.as_view(), name='event-attendance'),
     path('admin/all/', AdminTicketListView.as_view(), name='admin-tickets'),
+    
 ]
