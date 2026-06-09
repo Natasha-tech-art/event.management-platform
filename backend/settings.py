@@ -30,6 +30,9 @@ INSTALLED_APPS = [
     'notifications',
     'analytics',
     'payments',
+    
+    'rest_framework_simplejwt.token_blacklist',
+    
 ]
 
 MIDDLEWARE = [
