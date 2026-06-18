@@ -18,13 +18,22 @@ class InitiatePaymentView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         booking_id   = serializer.validated_data['booking_id']
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data.get('phone_number') or request.user.phone_number
         booking      = get_object_or_404(Booking, pk=booking_id, user=request.user)
+
+        if not phone_number:
+            return Response(
+                {'error': 'Phone number is required to initiate payment.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if booking.status == 'confirmed':
             return Response({'error': 'Booking already paid'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create pending payment
+        if serializer.validated_data.get('phone_number') and request.user.phone_number != phone_number:
+            request.user.phone_number = phone_number
+            request.user.save(update_fields=['phone_number'])
+
         payment, created = Payment.objects.get_or_create(
             booking=booking,
             defaults={
@@ -34,7 +43,10 @@ class InitiatePaymentView(APIView):
             }
         )
 
-        # Initiate STK Push
+        if not created and payment.phone_number != phone_number:
+            payment.phone_number = phone_number
+            payment.save(update_fields=['phone_number'])
+
         response = stk_push(phone_number, booking.total_amount, booking.id)
 
         if response.get('ResponseCode') == '0':

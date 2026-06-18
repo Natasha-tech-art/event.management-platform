@@ -13,13 +13,14 @@ class EventSerializer(serializers.ModelSerializer):
     category_name      = serializers.CharField(source='category.name', read_only=True)
     remaining_tickets  = serializers.ReadOnlyField()
     is_full            = serializers.ReadOnlyField()
+    price              = serializers.DecimalField(source='ticket_price', max_digits=10, decimal_places=2, write_only=True, required=False)
 
     class Meta:
         model = Event
         fields = [
             'id', 'organizer', 'organizer_name', 'title', 'description',
             'category', 'category_name', 'venue', 'location',
-            'start_date', 'end_date', 'ticket_price', 'capacity',
+            'start_date', 'end_date', 'ticket_price', 'price', 'capacity',
             'banner', 'status', 'remaining_tickets', 'is_full',
             'created_at', 'updated_at'
         ]

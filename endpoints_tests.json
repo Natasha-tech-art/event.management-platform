@@ -1,0 +1,399 @@
+[
+  {
+    "name": "User register",
+    "path": "/api/users/register/",
+    "method": "POST",
+    "role": "public",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"name": "Alice", "email": "alice@example.com", "password": "StrongPass123", "phone_number": "0712345678"},
+    "expected_status": 201,
+    "expected_response": {"id": 1, "name": "Alice", "email": "alice@example.com", "phone_number": "0712345678"}
+  },
+  {
+    "name": "User login",
+    "path": "/api/users/login/",
+    "method": "POST",
+    "role": "public",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"username": "alice", "password": "StrongPass123"},
+    "expected_status": 200,
+    "expected_response": {"access": "<jwt-access>", "refresh": "<jwt-refresh>"}
+  },
+  {
+    "name": "Refresh token",
+    "path": "/api/users/token/refresh/",
+    "method": "POST",
+    "role": "public",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"refresh": "<jwt-refresh>"},
+    "expected_status": 200,
+    "expected_response": {"access": "<new-access>"}
+  },
+  {
+    "name": "Logout",
+    "path": "/api/users/logout/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>", "Content-Type": "application/json"},
+    "body": null,
+    "expected_status": 204,
+    "expected_response": {}
+  },
+  {
+    "name": "Get profile",
+    "path": "/api/users/profile/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 1, "name": "Alice", "email": "alice@example.com", "phone_number": "0712345678"}
+  },
+  {
+    "name": "Change password",
+    "path": "/api/users/change-password/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>", "Content-Type": "application/json"},
+    "body": {"old_password": "StrongPass123", "new_password": "NewPass456"},
+    "expected_status": 200,
+    "expected_response": {"detail": "Password changed successfully."}
+  },
+  {
+    "name": "Admin list users",
+    "path": "/api/users/admin/users/",
+    "method": "GET",
+    "role": "admin",
+    "headers": {"Authorization": "Bearer <admin-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 1, "username": "alice"}]
+  },
+  {
+    "name": "Admin user detail",
+    "path": "/api/users/admin/users/2/",
+    "method": "GET",
+    "role": "admin",
+    "headers": {"Authorization": "Bearer <admin-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 2, "username": "bob", "email": "bob@example.com"}
+  },
+
+  {
+    "name": "List events",
+    "path": "/api/events/",
+    "method": "GET",
+    "role": "public",
+    "headers": {},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 1, "title": "Concert"}]
+  },
+  {
+    "name": "Create event",
+    "path": "/api/events/create/",
+    "method": "POST",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>", "Content-Type": "application/json"},
+    "body": {"title": "Concert", "description": "Live music", "date": "2026-07-01T19:00:00Z", "location": "Hall A", "capacity": 200, "price": 25.0, "category": "music"},
+    "expected_status": 201,
+    "expected_response": {"id": 10, "title": "Concert", "ticket_price": 25.0}
+  },
+  {
+    "name": "Event detail",
+    "path": "/api/events/10/",
+    "method": "GET",
+    "role": "public",
+    "headers": {},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 10, "title": "Concert", "capacity": 200}
+  },
+  {
+    "name": "Update event",
+    "path": "/api/events/10/update/",
+    "method": "PUT",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>", "Content-Type": "application/json"},
+    "body": {"title": "Concert - Updated", "capacity": 250},
+    "expected_status": 200,
+    "expected_response": {"id": 10, "title": "Concert - Updated", "capacity": 250}
+  },
+  {
+    "name": "Delete event",
+    "path": "/api/events/10/delete/",
+    "method": "DELETE",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 204,
+    "expected_response": {}
+  },
+  {
+    "name": "Publish event",
+    "path": "/api/events/10/publish/",
+    "method": "POST",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 10, "status": "published"}
+  },
+  {
+    "name": "Cancel event",
+    "path": "/api/events/10/cancel/",
+    "method": "POST",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": {"reason": "Venue issue"},
+    "expected_status": 200,
+    "expected_response": {"id": 10, "status": "cancelled"}
+  },
+  {
+    "name": "Join waitlist",
+    "path": "/api/events/10/waitlist/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 201,
+    "expected_response": {"event": 10, "user": 1, "position": 5}
+  },
+  {
+    "name": "My events (organizer)",
+    "path": "/api/events/my-events/",
+    "method": "GET",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 10, "title": "Concert"}]
+  },
+  {
+    "name": "Categories",
+    "path": "/api/events/categories/",
+    "method": "GET",
+    "role": "public",
+    "headers": {},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": "music", "name": "Music"}]
+  },
+
+  {
+    "name": "List bookings",
+    "path": "/api/bookings/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 5, "event": 10, "status": "confirmed"}]
+  },
+  {
+    "name": "Create booking",
+    "path": "/api/bookings/create/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>", "Content-Type": "application/json"},
+    "body": {"event": 10, "tickets": 2, "payment_method": "mpesa"},
+    "expected_status": 201,
+    "expected_response": {"id": 5, "event": 10, "status": "pending_payment"}
+  },
+  {
+    "name": "Booking detail",
+    "path": "/api/bookings/5/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 5, "event": 10}
+  },
+  {
+    "name": "Cancel booking",
+    "path": "/api/bookings/5/cancel/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": {"reason": "Change of plans"},
+    "expected_status": 200,
+    "expected_response": {"id": 5, "status": "cancelled"}
+  },
+  {
+    "name": "Confirm booking",
+    "path": "/api/bookings/5/confirm/",
+    "method": "POST",
+    "role": "admin",
+    "headers": {"Authorization": "Bearer <admin-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 5, "status": "confirmed"}
+  },
+  {
+    "name": "Organizer bookings",
+    "path": "/api/bookings/organizer/",
+    "method": "GET",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 5, "event": 10}]
+  },
+
+  {
+    "name": "My tickets",
+    "path": "/api/tickets/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 7, "booking": 5}]
+  },
+  {
+    "name": "Ticket detail",
+    "path": "/api/tickets/7/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 7, "booking": 5, "code": "ABC123"}
+  },
+  {
+    "name": "Generate ticket",
+    "path": "/api/tickets/generate/5/",
+    "method": "POST",
+    "role": "admin",
+    "headers": {"Authorization": "Bearer <admin-access>"},
+    "body": null,
+    "expected_status": 201,
+    "expected_response": {"ticket_id": 7, "booking": 5}
+  },
+  {
+    "name": "Check-in",
+    "path": "/api/tickets/checkin/",
+    "method": "POST",
+    "role": "staff",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"code": "ABC123", "event": 10},
+    "expected_status": 200,
+    "expected_response": {"checked_in": true}
+  },
+  {
+    "name": "Event attendance",
+    "path": "/api/tickets/attendance/10/",
+    "method": "GET",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"event": 10, "attended": 120}
+  },
+
+  {
+    "name": "List reviews",
+    "path": "/api/reviews/event/10/",
+    "method": "GET",
+    "role": "public",
+    "headers": {},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 3, "rating": 5, "comment": "Great!"}]
+  },
+  {
+    "name": "Create review",
+    "path": "/api/reviews/event/10/create/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>", "Content-Type": "application/json"},
+    "body": {"rating": 5, "comment": "Great event"},
+    "expected_status": 201,
+    "expected_response": {"id": 3, "rating": 5}
+  },
+  {
+    "name": "Update review",
+    "path": "/api/reviews/3/",
+    "method": "PUT",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>", "Content-Type": "application/json"},
+    "body": {"rating": 4, "comment": "Good"},
+    "expected_status": 200,
+    "expected_response": {"id": 3, "rating": 4}
+  },
+
+  {
+    "name": "List notifications",
+    "path": "/api/notifications/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": [{"id": 2, "message": "Ticket confirmed"}]
+  },
+  {
+    "name": "Mark notification read",
+    "path": "/api/notifications/2/read/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Authorization": "Bearer <access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"id": 2, "read": true}
+  },
+
+  {
+    "name": "Organizer analytics",
+    "path": "/api/analytics/organizer/",
+    "method": "GET",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"events": 5, "bookings": 120}
+  },
+  {
+    "name": "Event analytics",
+    "path": "/api/analytics/event/10/",
+    "method": "GET",
+    "role": "organizer",
+    "headers": {"Authorization": "Bearer <organizer-access>"},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"event": 10, "views": 1024}
+  },
+
+  {
+    "name": "Initiate payment",
+    "path": "/api/payments/initiate/",
+    "method": "POST",
+    "role": "authenticated",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"booking_id": 5, "phone_number": "0712345678"},
+    "expected_status": 200,
+    "expected_response": {"message": "Payment initiated. Check your phone for the M-Pesa prompt.", "checkout_request_id": "<checkout-request-id>"}
+  },
+  {
+    "name": "Mpesa callback",
+    "path": "/api/payments/mpesa/callback/",
+    "method": "POST",
+    "role": "public",
+    "headers": {"Content-Type": "application/json"},
+    "body": {"transaction_id": "trx_123", "status": "success", "booking": 5},
+    "expected_status": 200,
+    "expected_response": {"received": true}
+  },
+  {
+    "name": "Payment status",
+    "path": "/api/payments/status/5/",
+    "method": "GET",
+    "role": "authenticated",
+    "headers": {},
+    "body": null,
+    "expected_status": 200,
+    "expected_response": {"booking": 5, "status": "paid"}
+  }
+]

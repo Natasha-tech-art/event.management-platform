@@ -43,7 +43,11 @@ class EventCreateView(generics.CreateAPIView):
     permission_classes = [IsOrganizer]
 
     def perform_create(self, serializer):
-        serializer.save(organizer=self.request.user)
+        status = serializer.validated_data.get('status')
+        if status is None:
+            serializer.save(organizer=self.request.user, status='published')
+        else:
+            serializer.save(organizer=self.request.user)
 
 
 class EventDetailView(generics.RetrieveAPIView):

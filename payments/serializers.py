@@ -21,4 +21,4 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class InitiatePaymentSerializer(serializers.Serializer):
     booking_id   = serializers.IntegerField()
-    phone_number = serializers.CharField(max_length=15)
+    phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True)

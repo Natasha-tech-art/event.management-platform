@@ -26,13 +26,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('admin', 'Admin'),
     )
 
-    name        = models.CharField(max_length=255)
-    email       = models.EmailField(unique=True)
-    role        = models.CharField(max_length=20, choices=ROLE_CHOICES, default='attendee')
+    name         = models.CharField(max_length=255)
+    email        = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    role         = models.CharField(max_length=20, choices=ROLE_CHOICES, default='attendee')
     profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True)
-    is_active   = models.BooleanField(default=True)
-    is_staff    = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    is_active    = models.BooleanField(default=True)
+    is_staff     = models.BooleanField(default=False)
+    date_joined  = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']

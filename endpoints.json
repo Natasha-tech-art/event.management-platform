@@ -1,0 +1,101 @@
+[
+  {
+    "resource": "Admin",
+    "endpoints": [
+      {"path": "/admin/", "methods": ["GET","POST"], "description": "Django admin", "roles": ["admin", "staff"]}
+    ]
+  },
+  {
+    "resource": "Docs",
+    "endpoints": [
+      {"path": "/swagger/", "methods": ["GET"], "description": "Swagger UI", "roles": ["public"]}
+    ]
+  },
+  {
+    "resource": "Users",
+    "endpoints": [
+      {"path": "/api/users/register/", "methods": ["POST"], "description": "Register new user", "roles": ["public"]},
+      {"path": "/api/users/login/", "methods": ["POST"], "description": "Obtain JWT tokens", "roles": ["public"]},
+      {"path": "/api/users/token/refresh/", "methods": ["POST"], "description": "Refresh JWT token", "roles": ["public"]},
+      {"path": "/api/users/logout/", "methods": ["POST"], "description": "Logout (invalidate token)", "roles": ["authenticated"]},
+      {"path": "/api/users/profile/", "methods": ["GET","PUT"], "description": "User profile and phone number update", "roles": ["authenticated"]},
+      {"path": "/api/users/change-password/", "methods": ["POST"], "description": "Change password", "roles": ["authenticated"]},
+      {"path": "/api/users/admin/users/", "methods": ["GET"], "description": "Admin: list users", "roles": ["admin"]},
+      {"path": "/api/users/admin/users/<int:pk>/", "methods": ["GET","PUT","DELETE"], "description": "Admin: user detail", "roles": ["admin"]}
+    ]
+  },
+  {
+    "resource": "Events",
+    "endpoints": [
+      {"path": "/api/events/", "methods": ["GET"], "description": "Event list", "roles": ["public"]},
+      {"path": "/api/events/create/", "methods": ["POST"], "description": "Create event (accepts `price` as ticket_price)", "roles": ["organizer"]},
+      {"path": "/api/events/<int:pk>/", "methods": ["GET"], "description": "Event detail", "roles": ["public"]},
+      {"path": "/api/events/<int:pk>/update/", "methods": ["PUT","PATCH"], "description": "Update event", "roles": ["organizer"]},
+      {"path": "/api/events/<int:pk>/delete/", "methods": ["DELETE"], "description": "Delete event", "roles": ["organizer"]},
+      {"path": "/api/events/<int:pk>/publish/", "methods": ["POST"], "description": "Publish event", "roles": ["organizer"]},
+      {"path": "/api/events/<int:pk>/cancel/", "methods": ["POST"], "description": "Cancel event", "roles": ["organizer"]},
+      {"path": "/api/events/<int:pk>/waitlist/", "methods": ["POST"], "description": "Join waitlist", "roles": ["authenticated"]},
+      {"path": "/api/events/my-events/", "methods": ["GET"], "description": "Organizer: my events", "roles": ["organizer"]},
+      {"path": "/api/events/categories/", "methods": ["GET","POST"], "description": "Event categories", "roles": ["public","organizer"]},
+      {"path": "/api/events/admin/all/", "methods": ["GET"], "description": "Admin: all events", "roles": ["admin"]},
+      {"path": "/api/events/admin/<int:pk>/approve/", "methods": ["POST"], "description": "Admin: approve event", "roles": ["admin"]}
+    ]
+  },
+  {
+    "resource": "Bookings",
+    "endpoints": [
+      {"path": "/api/bookings/", "methods": ["GET"], "description": "User bookings", "roles": ["authenticated"]},
+      {"path": "/api/bookings/create/", "methods": ["POST"], "description": "Create booking", "roles": ["authenticated"]},
+      {"path": "/api/bookings/<int:pk>/", "methods": ["GET"], "description": "Booking detail", "roles": ["authenticated"]},
+      {"path": "/api/bookings/<int:pk>/cancel/", "methods": ["POST"], "description": "Cancel booking", "roles": ["authenticated"]},
+      {"path": "/api/bookings/<int:pk>/confirm/", "methods": ["POST"], "description": "Confirm booking", "roles": ["admin"]},
+      {"path": "/api/bookings/organizer/", "methods": ["GET"], "description": "Organizer: bookings list", "roles": ["organizer"]},
+      {"path": "/api/bookings/admin/all/", "methods": ["GET"], "description": "Admin: all bookings", "roles": ["admin"]}
+    ]
+  },
+  {
+    "resource": "Tickets",
+    "endpoints": [
+      {"path": "/api/tickets/", "methods": ["GET"], "description": "My tickets", "roles": ["authenticated"]},
+      {"path": "/api/tickets/<int:pk>/", "methods": ["GET"], "description": "Ticket detail", "roles": ["authenticated"]},
+      {"path": "/api/tickets/generate/<int:booking_id>/", "methods": ["POST"], "description": "Generate ticket", "roles": ["admin"]},
+      {"path": "/api/tickets/checkin/", "methods": ["POST"], "description": "Ticket check-in", "roles": ["staff","organizer"]},
+      {"path": "/api/tickets/attendance/<int:event_id>/", "methods": ["GET"], "description": "Event attendance", "roles": ["organizer"]},
+      {"path": "/api/tickets/admin/all/", "methods": ["GET"], "description": "Admin: all tickets", "roles": ["admin"]}
+    ]
+  },
+  {
+    "resource": "Reviews",
+    "endpoints": [
+      {"path": "/api/reviews/event/<int:event_id>/", "methods": ["GET"], "description": "List reviews for event", "roles": ["public"]},
+      {"path": "/api/reviews/event/<int:event_id>/create/", "methods": ["POST"], "description": "Create review", "roles": ["authenticated"]},
+      {"path": "/api/reviews/<int:pk>/", "methods": ["PUT","DELETE"], "description": "Update/Delete review", "roles": ["authenticated"]}
+    ]
+  },
+  {
+    "resource": "Notifications",
+    "endpoints": [
+      {"path": "/api/notifications/", "methods": ["GET"], "description": "Notifications list", "roles": ["authenticated"]},
+      {"path": "/api/notifications/<int:pk>/read/", "methods": ["POST"], "description": "Mark read", "roles": ["authenticated"]},
+      {"path": "/api/notifications/read-all/", "methods": ["POST"], "description": "Mark all read", "roles": ["authenticated"]},
+      {"path": "/api/notifications/unread-count/", "methods": ["GET"], "description": "Unread count", "roles": ["authenticated"]}
+    ]
+  },
+  {
+    "resource": "Analytics",
+    "endpoints": [
+      {"path": "/api/analytics/organizer/", "methods": ["GET"], "description": "Organizer analytics", "roles": ["organizer"]},
+      {"path": "/api/analytics/admin/", "methods": ["GET"], "description": "Admin analytics", "roles": ["admin"]},
+      {"path": "/api/analytics/event/<int:event_id>/", "methods": ["GET"], "description": "Event analytics", "roles": ["organizer"]}
+    ]
+  },
+  {
+    "resource": "Payments",
+    "endpoints": [
+      {"path": "/api/payments/initiate/", "methods": ["POST"], "description": "Initiate payment and prompt phone number (M-Pesa STK Push)", "roles": ["authenticated"]},
+      {"path": "/api/payments/mpesa/callback/", "methods": ["POST"], "description": "Mpesa callback (public webhook)", "roles": ["public"]},
+      {"path": "/api/payments/status/<int:booking_id>/", "methods": ["GET"], "description": "Payment status", "roles": ["authenticated"]},
+      {"path": "/api/payments/admin/all/", "methods": ["GET"], "description": "Admin: all payments", "roles": ["admin"]}
+    ]
+  }
+]
