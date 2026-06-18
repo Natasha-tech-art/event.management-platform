@@ -2,8 +2,6 @@ import qrcode
 import uuid
 from io import BytesIO
 from django.core.files import File
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 
 def generate_qr_code(ticket):
@@ -25,11 +23,17 @@ def generate_qr_code(ticket):
 
 def notify_ticket_update(event_id, remaining_tickets):
     """Send real-time ticket count update via WebSocket"""
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'tickets_{event_id}',
-        {
-            'type': 'ticket_update',
-            'remaining_tickets': remaining_tickets,
-        }
-    )
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f'tickets_{event_id}',
+                {
+                    'type': 'ticket_update',
+                    'remaining_tickets': remaining_tickets,
+                }
+            )
+    except Exception:
+        pass
