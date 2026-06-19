@@ -5,6 +5,7 @@ from .models import Payment
 class PaymentSerializer(serializers.ModelSerializer):
     booking_event = serializers.CharField(source='booking.event.title', read_only=True)
     user_name     = serializers.CharField(source='booking.user.name', read_only=True)
+    status        = serializers.CharField(read_only=True)
 
     class Meta:
         model = Payment

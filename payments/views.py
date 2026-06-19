@@ -55,7 +55,8 @@ class InitiatePaymentView(APIView):
             payment.save()
             return Response({
                 'message': 'Payment initiated. Check your phone for the M-Pesa prompt.',
-                'checkout_request_id': payment.checkout_request_id
+                'checkout_request_id': payment.checkout_request_id,
+                'status': payment.status
             })
 
         return Response({
@@ -113,8 +114,18 @@ class PaymentStatusView(APIView):
     def get(self, request, booking_id):
         booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
         payment = get_object_or_404(Payment, booking=booking)
+
+        if booking.status == 'confirmed' and payment.status != 'completed':
+            payment.status = 'completed'
+            if booking.payment_ref and not payment.mpesa_code:
+                payment.mpesa_code = booking.payment_ref
+            payment.save(update_fields=['status', 'mpesa_code'] if booking.payment_ref and not payment.mpesa_code else ['status'])
+
         serializer = PaymentSerializer(payment)
-        return Response(serializer.data)
+        return Response({
+            'payment': serializer.data,
+            'booking_status': booking.status
+        })
 
 
 class AdminPaymentListView(generics.ListAPIView):
