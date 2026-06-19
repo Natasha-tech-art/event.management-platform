@@ -93,7 +93,7 @@
     "resource": "Payments",
     "endpoints": [
       {"path": "/api/payments/initiate/", "methods": ["POST"], "description": "Initiate payment and prompt phone number (M-Pesa STK Push)", "roles": ["authenticated"]},
-      {"path": "/api/payments/mpesa/callback/", "methods": ["POST"], "description": "Mpesa callback (public webhook)", "roles": ["public"]},
+      {"path": "/api/payments/mpesa/callback/", "methods": ["POST"], "description": "Mpesa callback (public webhook) that auto-confirms the booking on successful payment", "roles": ["public"]},
       {"path": "/api/payments/status/<int:booking_id>/", "methods": ["GET"], "description": "Payment status", "roles": ["authenticated"]},
       {"path": "/api/payments/admin/all/", "methods": ["GET"], "description": "Admin: all payments", "roles": ["admin"]}
     ]

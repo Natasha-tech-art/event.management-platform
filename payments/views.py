@@ -74,25 +74,30 @@ class MpesaCallbackView(APIView):
         result_code = callback.get('ResultCode')
         checkout_id = callback.get('CheckoutRequestID')
 
-        try:
-            payment = Payment.objects.get(checkout_request_id=checkout_id)
-        except Payment.DoesNotExist:
+        payment = Payment.objects.filter(checkout_request_id=checkout_id).first()
+        if not payment:
+            merchant_id = callback.get('MerchantRequestID')
+            payment = Payment.objects.filter(merchant_request_id=merchant_id).first()
+
+        if not payment:
             return Response({'message': 'Payment not found'})
 
         if result_code == 0:
             # Payment successful
             items = callback.get('CallbackMetadata', {}).get('Item', [])
             mpesa_code = next(
-                (i['Value'] for i in items if i['Name'] == 'MpesaReceiptNumber'), None
+                (i['Value'] for i in items if i.get('Name') == 'MpesaReceiptNumber'), None
             )
-            payment.status    = 'completed'
-            payment.mpesa_code = mpesa_code
+            payment.status = 'completed'
+            if mpesa_code:
+                payment.mpesa_code = mpesa_code
             payment.save()
 
-            # Confirm the booking
+            # Confirm the booking automatically
             booking = payment.booking
-            booking.status     = 'confirmed'
-            booking.payment_ref = mpesa_code
+            booking.status = 'confirmed'
+            if mpesa_code:
+                booking.payment_ref = mpesa_code
             booking.save()
 
         else:
