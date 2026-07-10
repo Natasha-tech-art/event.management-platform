@@ -25,6 +25,7 @@ class EventListView(generics.ListAPIView):
     ordering_fields = ['start_date', 'ticket_price', 'created_at']
 
     def get_queryset(self):
+        # Only approved/published events are ever visible publicly
         queryset = Event.objects.filter(status='published')
         category = self.request.query_params.get('category')
         location = self.request.query_params.get('location')
@@ -43,11 +44,11 @@ class EventCreateView(generics.CreateAPIView):
     permission_classes = [IsOrganizer]
 
     def perform_create(self, serializer):
-        status = serializer.validated_data.get('status')
-        if status is None:
-            serializer.save(organizer=self.request.user, status='published')
-        else:
-            serializer.save(organizer=self.request.user)
+        # New events always start as 'draft' and require admin approval
+        # (AdminApproveEventView) before they're visible on the public
+        # event list. This ignores any 'status' the client might send,
+        # so an organizer can't bypass approval by setting it themselves.
+        serializer.save(organizer=self.request.user, status='draft')
 
 
 class EventDetailView(generics.RetrieveAPIView):
@@ -80,10 +81,13 @@ class OrganizerEventListView(generics.ListAPIView):
 
 
 class PublishEventView(APIView):
-    permission_classes = [IsOrganizer]
+    # Admin-only now: organizers can no longer self-publish their own
+    # events. Every event must go through admin approval before it's
+    # visible on the public event list.
+    permission_classes = [IsAdmin]
 
     def post(self, request, pk):
-        event = get_object_or_404(Event, pk=pk, organizer=request.user)
+        event = get_object_or_404(Event, pk=pk)
         event.status = 'published'
         event.save()
         return Response({'message': 'Event published successfully'})
@@ -113,6 +117,8 @@ class JoinWaitlistView(APIView):
 
 
 class AdminEventListView(generics.ListAPIView):
+    # Admins see ALL events regardless of status — this is how the admin
+    # dashboard finds pending 'draft' events awaiting approval
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [IsAdmin]
