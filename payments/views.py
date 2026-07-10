@@ -115,11 +115,12 @@ class PaymentStatusView(APIView):
         booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
         payment = get_object_or_404(Payment, booking=booking)
 
-        if booking.status == 'confirmed' and payment.status != 'completed':
-            payment.status = 'completed'
-            if booking.payment_ref and not payment.mpesa_code:
-                payment.mpesa_code = booking.payment_ref
-            payment.save(update_fields=['status', 'mpesa_code'] if booking.payment_ref and not payment.mpesa_code else ['status'])
+        if payment.status == 'pending' and booking.status == 'confirmed':
+            if payment.mpesa_code or booking.payment_ref:
+                payment.status = 'completed'
+                if booking.payment_ref and not payment.mpesa_code:
+                    payment.mpesa_code = booking.payment_ref
+                payment.save(update_fields=['status', 'mpesa_code'])
 
         serializer = PaymentSerializer(payment)
         return Response({
