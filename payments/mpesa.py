@@ -1,7 +1,10 @@
 import requests
 import base64
+import logging
 from datetime import datetime
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_mpesa_token():
@@ -15,9 +18,39 @@ def get_mpesa_token():
 
     response = requests.get(
         'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-        headers={'Authorization': f'Basic {credentials}'}
+        headers={'Authorization': f'Basic {credentials}'},
+        timeout=15,
     )
-    return response.json().get('access_token')
+
+    if response.status_code != 200:
+        logger.error(
+            "MPESA token request failed: %s %s", response.status_code, response.text
+        )
+        return None
+
+    token = response.json().get('access_token')
+    if not token:
+        logger.error("MPESA token response missing access_token: %s", response.text)
+    return token
+
+
+def normalize_phone_number(phone_number):
+    """
+    Normalize a Kenyan phone number to the 2547XXXXXXXX / 2541XXXXXXXX
+    format required by Daraja, regardless of how the user typed it.
+    Handles: 07XXXXXXXX, 01XXXXXXXX, 7XXXXXXXX, 1XXXXXXXX,
+             254XXXXXXXXX, +254XXXXXXXXX, and inputs with spaces/dashes.
+    """
+    phone_number = str(phone_number).strip().replace(" ", "").replace("-", "")
+
+    if phone_number.startswith('+'):
+        phone_number = phone_number[1:]
+    elif phone_number.startswith('0'):
+        phone_number = '254' + phone_number[1:]
+    elif phone_number.startswith('7') or phone_number.startswith('1'):
+        phone_number = '254' + phone_number
+
+    return phone_number
 
 
 def generate_password():
@@ -32,14 +65,15 @@ def generate_password():
 
 def stk_push(phone_number, amount, booking_id):
     """Initiate STK Push to customer's phone"""
-    token     = get_mpesa_token()
-    password, timestamp = generate_password()
+    token = get_mpesa_token()
+    if not token:
+        return {
+            'ResponseCode': '1',
+            'errorMessage': 'Could not authenticate with M-Pesa (check consumer key/secret).',
+        }
 
-    # Format phone number (must start with 254)
-    if phone_number.startswith('0'):
-        phone_number = '254' + phone_number[1:]
-    elif phone_number.startswith('+'):
-        phone_number = phone_number[1:]
+    password, timestamp = generate_password()
+    phone_number = normalize_phone_number(phone_number)
 
     payload = {
         "BusinessShortCode": settings.MPESA_SHORTCODE,
@@ -55,12 +89,28 @@ def stk_push(phone_number, amount, booking_id):
         "TransactionDesc": f"Payment for booking {booking_id}"
     }
 
-    response = requests.post(
-        'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
-        json=payload,
-        headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type': 'application/json'
-        }
+    logger.info(
+        "Initiating STK push: phone=%s amount=%s booking_id=%s callback=%s",
+        phone_number, amount, booking_id, settings.MPESA_CALLBACK_URL,
     )
-    return response.json()
+
+    try:
+        response = requests.post(
+            'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+            json=payload,
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json'
+            },
+            timeout=20,
+        )
+    except requests.exceptions.RequestException as exc:
+        logger.error("STK push request failed to reach Safaricom: %s", exc)
+        return {
+            'ResponseCode': '1',
+            'errorMessage': f'Could not reach Safaricom: {exc}',
+        }
+
+    data = response.json()
+    logger.info("STK push response: %s", data)
+    return data
