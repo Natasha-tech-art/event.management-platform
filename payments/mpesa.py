@@ -7,6 +7,22 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def normalize_callback_url(callback_url):
+    """Ensure M-Pesa uses the correct payment callback endpoint."""
+    if not callback_url:
+        return callback_url
+
+    callback_url = callback_url.strip().rstrip('/')
+
+    if callback_url.endswith('/api/mpesa/callback'):
+        return callback_url.replace('/api/mpesa/callback', '/api/payments/mpesa/callback') + '/'
+
+    if callback_url.endswith('/mpesa/callback'):
+        return callback_url.replace('/mpesa/callback', '/api/payments/mpesa/callback') + '/'
+
+    return callback_url + '/api/payments/mpesa/callback/'
+
+
 def get_mpesa_token():
     """Get OAuth access token from Safaricom"""
     consumer_key    = settings.MPESA_CONSUMER_KEY
@@ -74,6 +90,7 @@ def stk_push(phone_number, amount, booking_id):
 
     password, timestamp = generate_password()
     phone_number = normalize_phone_number(phone_number)
+    callback_url = normalize_callback_url(settings.MPESA_CALLBACK_URL)
 
     payload = {
         "BusinessShortCode": settings.MPESA_SHORTCODE,
@@ -84,14 +101,14 @@ def stk_push(phone_number, amount, booking_id):
         "PartyA": phone_number,
         "PartyB": settings.MPESA_SHORTCODE,
         "PhoneNumber": phone_number,
-        "CallBackURL": settings.MPESA_CALLBACK_URL,
+        "CallBackURL": callback_url,
         "AccountReference": f"EventHub-{booking_id}",
         "TransactionDesc": f"Payment for booking {booking_id}"
     }
 
     logger.info(
         "Initiating STK push: phone=%s amount=%s booking_id=%s callback=%s",
-        phone_number, amount, booking_id, settings.MPESA_CALLBACK_URL,
+        phone_number, amount, booking_id, callback_url,
     )
 
     try:

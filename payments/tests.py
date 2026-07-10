@@ -5,10 +5,21 @@ from rest_framework.test import APIClient
 from bookings.models import Booking
 from events.models import Category, Event
 from payments.models import Payment
+from payments.mpesa import normalize_callback_url
 from users.models import User
 
 
 class PaymentStatusViewTests(TestCase):
+    def test_normalize_callback_url_uses_payments_endpoint(self):
+        self.assertEqual(
+            normalize_callback_url('https://example.com/api/mpesa/callback'),
+            'https://example.com/api/payments/mpesa/callback/'
+        )
+        self.assertEqual(
+            normalize_callback_url('https://example.com/mpesa/callback'),
+            'https://example.com/api/payments/mpesa/callback/'
+        )
+
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
