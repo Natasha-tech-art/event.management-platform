@@ -61,6 +61,8 @@ class PaymentStatusViewTests(TestCase):
         response = self.client.get(f'/api/payments/status/{booking.id}/')
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'pending')
+        self.assertEqual(response.json()['payment_status'], 'pending')
         self.assertEqual(response.json()['payment']['status'], 'pending')
         self.assertEqual(response.json()['booking_status'], 'pending')
 
@@ -83,6 +85,8 @@ class PaymentStatusViewTests(TestCase):
         response = self.client.get(f'/api/payments/status/{booking.id}/')
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'failed')
+        self.assertEqual(response.json()['payment_status'], 'failed')
         self.assertEqual(response.json()['payment']['status'], 'failed')
         self.assertEqual(response.json()['booking_status'], 'confirmed')
 
@@ -106,5 +110,23 @@ class PaymentStatusViewTests(TestCase):
         response = self.client.get(f'/api/payments/status/{booking.id}/')
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'completed')
+        self.assertEqual(response.json()['payment_status'], 'completed')
         self.assertEqual(response.json()['payment']['status'], 'completed')
         self.assertEqual(response.json()['booking_status'], 'confirmed')
+
+    def test_payment_status_view_returns_pending_when_payment_record_is_missing(self):
+        booking = Booking.objects.create(
+            user=self.user,
+            event=self.event,
+            ticket_quantity=1,
+            total_amount=0
+        )
+
+        response = self.client.get(f'/api/payments/status/{booking.id}/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'pending')
+        self.assertEqual(response.json()['payment_status'], 'pending')
+        self.assertEqual(response.json()['payment']['status'], 'pending')
+        self.assertEqual(response.json()['booking_status'], 'pending')

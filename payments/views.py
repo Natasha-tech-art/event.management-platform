@@ -113,7 +113,17 @@ class PaymentStatusView(APIView):
 
     def get(self, request, booking_id):
         booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
-        payment = get_object_or_404(Payment, booking=booking)
+        payment, created = Payment.objects.get_or_create(
+            booking=booking,
+            defaults={
+                'amount': booking.total_amount,
+                'phone_number': request.user.phone_number or '',
+                'status': 'pending'
+            }
+        )
+
+        if created:
+            payment.save()
 
         if payment.status == 'pending' and booking.status == 'confirmed':
             if payment.mpesa_code or booking.payment_ref:
@@ -124,6 +134,8 @@ class PaymentStatusView(APIView):
 
         serializer = PaymentSerializer(payment)
         return Response({
+            'status': payment.status,
+            'payment_status': payment.status,
             'payment': serializer.data,
             'booking_status': booking.status
         })
