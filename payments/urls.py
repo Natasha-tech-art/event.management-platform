@@ -1,12 +1,13 @@
 from django.urls import path
 from .views import (
     InitiatePaymentView, MpesaCallbackView,
-    PaymentStatusView, AdminPaymentListView
+    PaymentStatusView, AdminPaymentListView, ReconcilePaymentView
 )
 
 urlpatterns = [
     path('initiate/', InitiatePaymentView.as_view(), name='initiate-payment'),
     path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa-callback'),
     path('status/<int:booking_id>/', PaymentStatusView.as_view(), name='payment-status'),
+    path('reconcile/<int:booking_id>/', ReconcilePaymentView.as_view(), name='reconcile-payment'),
     path('admin/all/', AdminPaymentListView.as_view(), name='admin-payments'),
 ]

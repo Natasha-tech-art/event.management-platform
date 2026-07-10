@@ -7,6 +7,7 @@ from .serializers import PaymentSerializer, InitiatePaymentSerializer
 from .mpesa import stk_push
 from bookings.models import Booking
 from users.permissions import IsAdmin
+import logging
 
 
 class InitiatePaymentView(APIView):
@@ -70,8 +71,21 @@ class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        data     = request.data
-        callback = data.get('Body', {}).get('stkCallback', {})
+        logger = logging.getLogger(__name__)
+        data = request.data
+
+        # Log incoming callback for diagnostics
+        logger.info('Mpesa callback received: %s', data)
+
+        # Support multiple payload shapes: {"Body": {"stkCallback": {...}}} or {"stkCallback": {...}}
+        if isinstance(data, dict) and data.get('Body') and isinstance(data.get('Body'), dict) and data.get('Body').get('stkCallback'):
+            callback = data.get('Body', {}).get('stkCallback', {})
+        elif isinstance(data, dict) and data.get('stkCallback'):
+            callback = data.get('stkCallback', {})
+        else:
+            # fallback: assume request.data is already the callback dict
+            callback = data
+
         result_code = callback.get('ResultCode')
         checkout_id = callback.get('CheckoutRequestID')
 
@@ -83,7 +97,13 @@ class MpesaCallbackView(APIView):
         if not payment:
             return Response({'message': 'Payment not found'})
 
-        if result_code == 0:
+        # Normalize result code comparison (could be string or int)
+        try:
+            rc = int(result_code) if result_code is not None else None
+        except (ValueError, TypeError):
+            rc = None
+
+        if rc == 0:
             # Payment successful
             items = callback.get('CallbackMetadata', {}).get('Item', [])
             mpesa_code = next(
@@ -106,6 +126,38 @@ class MpesaCallbackView(APIView):
             payment.save()
 
         return Response({'message': 'Callback received'})
+
+
+class ReconcilePaymentView(APIView):
+    """Admin-only endpoint to reconcile payment status for a booking.
+
+    Useful when callbacks were missed and an operator needs to mark a payment as completed
+    based on the booking's payment_ref or other evidence.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, pk=booking_id)
+        payment = Payment.objects.filter(booking=booking).first()
+        if not payment:
+            return Response({'error': 'Payment not found for this booking'}, status=status.HTTP_404_NOT_FOUND)
+
+        updated = False
+        # If booking has a payment_ref (receipt) and payment not completed, update it
+        if booking.payment_ref and payment.status != 'completed':
+            payment.status = 'completed'
+            if not payment.mpesa_code:
+                payment.mpesa_code = booking.payment_ref
+            payment.save(update_fields=['status', 'mpesa_code'])
+            updated = True
+
+        # If booking is confirmed but payment not completed, mark completed (best-effort)
+        if booking.status == 'confirmed' and payment.status != 'completed':
+            payment.status = 'completed'
+            payment.save(update_fields=['status'])
+            updated = True
+
+        return Response({'updated': updated, 'status': payment.status})
 
 
 class PaymentStatusView(APIView):
