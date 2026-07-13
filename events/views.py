@@ -69,6 +69,8 @@ class EventDeleteView(generics.DestroyAPIView):
     permission_classes = [IsOrganizer]
 
     def get_queryset(self):
+        if self.request.user.role == 'admin':
+            return Event.objects.all()
         return Event.objects.filter(organizer=self.request.user)
 
 
