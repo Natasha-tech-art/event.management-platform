@@ -14,6 +14,7 @@ class EventSerializer(serializers.ModelSerializer):
     remaining_tickets  = serializers.ReadOnlyField()
     is_full            = serializers.ReadOnlyField()
     price              = serializers.DecimalField(source='ticket_price', max_digits=10, decimal_places=2, write_only=True, required=False)
+    banner             = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Event

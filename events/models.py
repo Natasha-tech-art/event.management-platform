@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from cloudinary.models import CloudinaryField
 
 
 class Category(models.Model):
@@ -28,7 +29,7 @@ class Event(models.Model):
     end_date     = models.DateTimeField()
     ticket_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     capacity     = models.PositiveIntegerField()
-    banner       = models.ImageField(upload_to='event_banners/', blank=True, null=True)
+    banner       = CloudinaryField('image', folder='event_banners', blank=True, null=True)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)

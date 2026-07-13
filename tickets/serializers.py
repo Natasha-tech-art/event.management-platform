@@ -8,6 +8,7 @@ class TicketSerializer(serializers.ModelSerializer):
     event_venue  = serializers.CharField(source='booking.event.venue', read_only=True)
     attendee     = serializers.CharField(source='booking.user.name', read_only=True)
     quantity     = serializers.IntegerField(source='booking.ticket_quantity', read_only=True)
+    qr_code      = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Ticket

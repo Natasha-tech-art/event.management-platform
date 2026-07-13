@@ -1,12 +1,13 @@
 from django.db import models
 from bookings.models import Booking
+from cloudinary.models import CloudinaryField
 import uuid
 
 
 class Ticket(models.Model):
     booking    = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='ticket')
     ticket_ref = models.CharField(max_length=50, unique=True)
-    qr_code    = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    qr_code    = CloudinaryField('image', folder='qr_codes', blank=True, null=True)
     checked_in = models.BooleanField(default=False)
     checked_in_at = models.DateTimeField(null=True, blank=True)
 

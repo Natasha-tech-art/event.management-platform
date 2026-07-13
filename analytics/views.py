@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 from django.db.models import Sum, Count
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from events.models import Event
 from bookings.models import Booking
@@ -24,20 +25,25 @@ class OrganizerAnalyticsView(APIView):
             status='completed'
         ).aggregate(total=Sum('amount'))['total'] or 0
 
-        # Monthly ticket sales
-        monthly_sales = Booking.objects.filter(
+        # Monthly ticket sales (database-agnostic — works on SQLite, Postgres, etc.)
+        monthly_sales_qs = Booking.objects.filter(
             event__organizer=request.user,
             status='confirmed'
-        ).extra(select={'month': "strftime('%%m', booking_date)"}).values('month').annotate(
+        ).annotate(month=TruncMonth('booking_date')).values('month').annotate(
             total=Count('id')
         ).order_by('month')
+
+        monthly_sales = [
+            {'month': entry['month'].strftime('%m'), 'total': entry['total']}
+            for entry in monthly_sales_qs if entry['month'] is not None
+        ]
 
         return Response({
             'total_events': total_events,
             'published_events': published,
             'total_bookings': total_bookings,
             'total_revenue': total_revenue,
-            'monthly_sales': list(monthly_sales),
+            'monthly_sales': monthly_sales,
         })
 
 

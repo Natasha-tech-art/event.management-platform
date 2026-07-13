@@ -3,6 +3,9 @@ from decouple import config
 from datetime import timedelta
 import dj_database_url
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -118,18 +121,19 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Persistent media storage (Render's filesystem is ephemeral, so uploaded
-# banners must live in cloud storage, not on local disk, to survive
-# restarts/redeploys). Falls back to local disk automatically if no
-# Cloudinary credentials are set (e.g. local development).
-CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
-if CLOUDINARY_CLOUD_NAME:
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-        'API_KEY': config('CLOUDINARY_API_KEY', default=''),
-        'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
-    }
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Cloudinary — required in all environments now. This will raise a clear
+# error on startup if any of the three values are missing, instead of
+# silently falling back to local (ephemeral) disk storage.
+CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET')
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True,
+)
 
 STATIC_URL = '/static/'
 
