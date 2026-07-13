@@ -1,7 +1,7 @@
 import qrcode
 import uuid
 from io import BytesIO
-from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 def generate_qr_code(ticket):
@@ -17,7 +17,15 @@ def generate_qr_code(ticket):
     img.save(buffer, format='PNG')
     buffer.seek(0)
 
-    ticket.qr_code.save(f"{ticket.ticket_ref}.png", File(buffer), save=False)
+    # CloudinaryField only triggers its upload-on-save logic when the
+    # assigned value is an actual UploadedFile instance (unlike Django's
+    # ImageField, it has no FieldFile.save() API to call separately).
+    uploaded_file = SimpleUploadedFile(
+        name=f"{ticket.ticket_ref}.png",
+        content=buffer.read(),
+        content_type='image/png',
+    )
+    ticket.qr_code = uploaded_file
     return ticket
 
 
