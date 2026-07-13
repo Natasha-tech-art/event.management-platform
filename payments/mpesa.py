@@ -6,6 +6,15 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+CORRECT_CALLBACK_PATH = '/api/payments/mpesa/callback/'
+
+
+def get_base_url():
+    """Switch between sandbox and production Daraja endpoints based on MPESA_ENV."""
+    if getattr(settings, 'MPESA_ENV', 'sandbox') == 'production':
+        return 'https://api.safaricom.co.ke'
+    return 'https://sandbox.safaricom.co.ke'
+
 
 def normalize_callback_url(callback_url):
     """Ensure M-Pesa uses the correct payment callback endpoint."""
@@ -13,14 +22,19 @@ def normalize_callback_url(callback_url):
         return callback_url
 
     callback_url = callback_url.strip().rstrip('/')
+    correct_path = CORRECT_CALLBACK_PATH.rstrip('/')
+
+    # Already correct — return as-is (with a single trailing slash), don't touch it.
+    if callback_url.endswith(correct_path):
+        return callback_url + '/'
 
     if callback_url.endswith('/api/mpesa/callback'):
-        return callback_url.replace('/api/mpesa/callback', '/api/payments/mpesa/callback') + '/'
+        return callback_url[: -len('/api/mpesa/callback')] + CORRECT_CALLBACK_PATH
 
     if callback_url.endswith('/mpesa/callback'):
-        return callback_url.replace('/mpesa/callback', '/api/payments/mpesa/callback') + '/'
+        return callback_url[: -len('/mpesa/callback')] + CORRECT_CALLBACK_PATH
 
-    return callback_url + '/api/payments/mpesa/callback/'
+    return callback_url + CORRECT_CALLBACK_PATH
 
 
 def get_mpesa_token():
@@ -33,7 +47,7 @@ def get_mpesa_token():
     ).decode()
 
     response = requests.get(
-        'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+        f'{get_base_url()}/oauth/v1/generate?grant_type=client_credentials',
         headers={'Authorization': f'Basic {credentials}'},
         timeout=15,
     )
@@ -113,7 +127,7 @@ def stk_push(phone_number, amount, booking_id):
 
     try:
         response = requests.post(
-            'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+            f'{get_base_url()}/mpesa/stkpush/v1/processrequest',
             json=payload,
             headers={
                 'Authorization': f'Bearer {token}',
